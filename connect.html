@@ -3,65 +3,55 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>MLT News Bot — TonConnect</title>
-
 <style>
   body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
   .wrap { max-width: 720px; margin: 0 auto; }
   h1 { margin: 0 0 12px; font-size: 32px; }
   p  { margin: 10px 0 16px; line-height: 1.45; color:#222; }
   #status { margin-top: 12px; color: #0a0; }
-  #footer { margin-top: 36px; font-size: 13px; color:#666; }
   .card { background:#fff; border:1px solid #e7e7e7; border-radius:12px; padding:16px; }
+  .btn { display:inline-block; padding:10px 16px; border-radius:10px; border:1px solid #1b78ff; color:#1b78ff; background:#fff; cursor:pointer; }
 </style>
-
-<!-- TonConnect UI -->
 <script type="module">
   import { TonConnectUI } from "https://unpkg.com/@tonconnect/ui@2.0.7/dist/tonconnect-ui.min.js";
 
   const manifestUrl = 'https://blotho.github.io/Melody-Token-Bot-/tonconnect-manifest.json';
-
-  // Инициализация
   const tonconnectUI = new TonConnectUI({ manifestUrl });
 
-  // Кнопка подключения (на всякий случай, если модалка закрыта)
   window.addEventListener('DOMContentLoaded', () => {
     tonconnectUI.mount('#connect');
 
-    // Автоматически открыть модалку выбора кошельков, если ещё не подключено
+    // Кнопка-явный триггер модалки (нужно для iOS и тех, кто блокирует автопоказ)
+    document.getElementById('openBtn').addEventListener('click', async () => {
+      await tonconnectUI.openModal();
+    });
+
+    // Попытка автопоказа (может быть заблокирована браузером)
     setTimeout(async () => {
       try {
         const wallet = await tonconnectUI.getWallet();
-        if (!wallet) {
-          await tonconnectUI.openModal();
-        }
-      } catch (e) {
-        // В случае блокировок — пользователь нажмёт кнопку вручную
-      }
+        if (!wallet) await tonconnectUI.openModal();
+      } catch (_) {}
     }, 200);
   });
 
-  // Отображаем адрес после подключения
-  tonconnectUI.onStatusChange(async (walletInfo) => {
+  tonconnectUI.onStatusChange((walletInfo) => {
     const status = document.getElementById('status');
     if (walletInfo?.account?.address) {
-      const addr = walletInfo.account.address;
-      status.textContent = `✅ Подключено: ${addr.slice(0, 4)}…${addr.slice(-4)}. Можете вернуться в Telegram.`;
+      const a = walletInfo.account.address;
+      status.textContent = `✅ Подключено: ${a.slice(0,4)}…${a.slice(-4)}. Можно вернуться в Telegram.`;
     }
   });
 </script>
-
 <body>
-<div class="wrap">
-  <h1>Подключение кошелька</h1>
-  <div class="card">
-    <p>Нажмите кнопку ниже, выберите кошелёк (Tonkeeper, Wallet in Telegram и др.) и подтвердите подключение.</p>
-    <div id="connect"></div>
-    <p id="status">Ожидаем подключение…</p>
+  <div class="wrap">
+    <h1>Подключение кошелька</h1>
+    <div class="card">
+      <p>Нажмите кнопку ниже, выберите кошелёк (Tonkeeper, Wallet in Telegram и др.) и подтвердите подключение.</p>
+      <div id="connect" style="margin-bottom:8px;"></div>
+      <button id="openBtn" class="btn">Подключить кошелёк</button>
+      <p id="status">Ожидаем подключение…</p>
+    </div>
   </div>
-
-  <div id="footer">
-    Если окно выбора кошелька не открылось автоматически, нажмите круглую кнопку в правом нижнем углу.
-  </div>
-</div>
 </body>
 </html>
