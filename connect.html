@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>MLT News Bot — TonConnect</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; background:#fafafa; }
-    .wrap { max-width: 720px; margin: 0 auto; }
-    h1 { margin: 0 0 12px; font-size: 32px; }
-    .card { background:#fff; border:1px solid #e7e7e7; border-radius:12px; padding:16px; }
-    p  { margin: 10px 0 16px; line-height: 1.45; color:#222; }
-    #status { margin-top: 12px; color:#0a0; }
-    .btn { display:inline-block; padding:10px 16px; border-radius:10px; border:1px solid #1b78ff; color:#1b78ff; background:#fff; cursor:pointer; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:24px;background:#fafafa}
+    .wrap{max-width:720px;margin:0 auto}
+    h1{margin:0 0 12px;font-size:32px}
+    .card{background:#fff;border:1px solid #e7e7e7;border-radius:12px;padding:16px}
+    p{margin:10px 0 16px;line-height:1.45;color:#222}
+    #status{margin-top:12px;color:#0a0}
+    .btn{display:inline-block;padding:10px 16px;border-radius:10px;border:1px solid #1b78ff;color:#1b78ff;background:#fff;cursor:pointer}
   </style>
 </head>
 <body>
@@ -20,39 +20,48 @@
     <div class="card">
       <p>Нажмите кнопку ниже, выберите кошелёк (Tonkeeper, Wallet in Telegram и др.) и подтвердите подключение.</p>
       <div id="connect" style="margin-bottom:8px;"></div>
-      <button id="openBtn" class="btn" onclick="window.openWallet()">Подключить кошелёк</button>
+      <button class="btn" onclick="openWallet()">Подключить кошелёк</button>
       <p id="status">Ожидаем подключение…</p>
     </div>
   </div>
 
+  <!-- Глобальный хендлер + fallback -->
+  <script>
+    // deeplink на случай, если модуль не загрузится/блокируется
+    const MANIFEST = 'https://blotho.github.io/MLTNewsBot-/tonconnect-manifest.json'.replace('MLTNewsBot-','Melody-Token-Bot-');
+    const FALLBACK_DEEPLINK = 'https://app.tonkeeper.com/ton-connect?manifestUrl=' + encodeURIComponent(MANIFEST);
+
+    // заглушки, чтобы кнопка всегда работала
+    window.openWallet = function(){ location.href = FALLBACK_DEEPLINK; };
+  </script>
+
+  <!-- Основной модуль TonConnect UI -->
   <script type="module">
     import { TonConnectUI } from "https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.0.7/dist/tonconnect-ui.min.js";
 
     const manifestUrl = 'https://blotho.github.io/Melody-Token-Bot-/tonconnect-manifest.json';
     const tonconnectUI = new TonConnectUI({ manifestUrl });
 
-    // Рендер кнопки TonConnect (плавающая иконка) — опционально
+    // Рендер плавающей кнопки
     tonconnectUI.mount('#connect');
 
-    // Ручной триггер (важно для iOS/встроенных браузеров)
+    // Переопределяем глобальный хендлер: сначала пробуем модалку, при ошибке — deeplink
     window.openWallet = async () => {
-      try { await tonconnectUI.openModal(); } catch (_) {}
+      try { await tonconnectUI.openModal(); }
+      catch { location.href = 'https://app.tonkeeper.com/ton-connect?manifestUrl=' + encodeURIComponent(manifestUrl); }
     };
 
-    // Попытка автопоказа (может быть заблокирована браузером)
+    // Автопоказ (если не заблокирован браузером)
     setTimeout(async () => {
-      try {
-        const wallet = await tonconnectUI.getWallet();
-        if (!wallet) await tonconnectUI.openModal();
-      } catch (_) {}
+      try { if (!(await tonconnectUI.getWallet())) await tonconnectUI.openModal(); } catch {}
     }, 200);
 
-    // Обновляем статус после подключения
-    tonconnectUI.onStatusChange((walletInfo) => {
-      const status = document.getElementById('status');
-      if (walletInfo?.account?.address) {
-        const a = walletInfo.account.address;
-        status.textContent = `✅ Подключено: ${a.slice(0,4)}…${a.slice(-4)}. Можно вернуться в Telegram.`;
+    // Статус после подключения
+    tonconnectUI.onStatusChange(w => {
+      if (w?.account?.address) {
+        const a = w.account.address;
+        document.getElementById('status').textContent =
+          `✅ Подключено: ${a.slice(0,4)}…${a.slice(-4)}. Можно вернуться в Telegram.`;
       }
     });
   </script>
