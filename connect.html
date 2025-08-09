@@ -3,31 +3,65 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>MLT News Bot — TonConnect</title>
+
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { margin: 0 0 12px; font-size: 32px; }
+  p  { margin: 10px 0 16px; line-height: 1.45; color:#222; }
+  #status { margin-top: 12px; color: #0a0; }
+  #footer { margin-top: 36px; font-size: 13px; color:#666; }
+  .card { background:#fff; border:1px solid #e7e7e7; border-radius:12px; padding:16px; }
+</style>
+
+<!-- TonConnect UI -->
 <script type="module">
   import { TonConnectUI } from "https://unpkg.com/@tonconnect/ui@2.0.7/dist/tonconnect-ui.min.js";
 
-  const app = document.getElementById('app');
+  const manifestUrl = 'https://blotho.github.io/Melody-Token-Bot-/tonconnect-manifest.json';
 
-  const tonconnectUI = new TonConnectUI({
-    manifestUrl: 'https://blotho.github.io/Melody-Token-Bot-/tonconnect-manifest.json'
+  // Инициализация
+  const tonconnectUI = new TonConnectUI({ manifestUrl });
+
+  // Кнопка подключения (на всякий случай, если модалка закрыта)
+  window.addEventListener('DOMContentLoaded', () => {
+    tonconnectUI.mount('#connect');
+
+    // Автоматически открыть модалку выбора кошельков, если ещё не подключено
+    setTimeout(async () => {
+      try {
+        const wallet = await tonconnectUI.getWallet();
+        if (!wallet) {
+          await tonconnectUI.openModal();
+        }
+      } catch (e) {
+        // В случае блокировок — пользователь нажмёт кнопку вручную
+      }
+    }, 200);
   });
 
-  // Кнопка подключения
-  tonconnectUI.mount('#connect');
-
-  // После подключения можно показать адрес и подсказку “вернитесь в Telegram”
-  tonconnectUI.onStatusChange((walletInfo) => {
+  // Отображаем адрес после подключения
+  tonconnectUI.onStatusChange(async (walletInfo) => {
+    const status = document.getElementById('status');
     if (walletInfo?.account?.address) {
-      document.getElementById('status').textContent =
-        `✅ Подключено: ${walletInfo.account.address.slice(0,4)}…${walletInfo.account.address.slice(-4)}`;
+      const addr = walletInfo.account.address;
+      status.textContent = `✅ Подключено: ${addr.slice(0, 4)}…${addr.slice(-4)}. Можете вернуться в Telegram.`;
     }
   });
 </script>
-<body style="font-family: system-ui; margin: 24px;">
+
+<body>
+<div class="wrap">
   <h1>Подключение кошелька</h1>
-  <p>Нажмите кнопку ниже, выберите Tonkeeper (или другой кошелёк) и подтвердите подключение.</p>
-  <div id="connect"></div>
-  <p id="status" style="margin-top:12px;color:#0a0;">Ожидаем подключение…</p>
-  <div id="app"></div>
+  <div class="card">
+    <p>Нажмите кнопку ниже, выберите кошелёк (Tonkeeper, Wallet in Telegram и др.) и подтвердите подключение.</p>
+    <div id="connect"></div>
+    <p id="status">Ожидаем подключение…</p>
+  </div>
+
+  <div id="footer">
+    Если окно выбора кошелька не открылось автоматически, нажмите круглую кнопку в правом нижнем углу.
+  </div>
+</div>
 </body>
 </html>
