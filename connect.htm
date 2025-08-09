@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MLT News Bot — TonConnect</title>
+<script type="module">
+  import { TonConnectUI } from "https://unpkg.com/@tonconnect/ui@2.0.7/dist/tonconnect-ui.min.js";
+
+  const app = document.getElementById('app');
+
+  const tonconnectUI = new TonConnectUI({
+    manifestUrl: 'https://blotho.github.io/Melody-Token-Bot-/tonconnect-manifest.json'
+  });
+
+  // Кнопка подключения
+  tonconnectUI.mount('#connect');
+
+  // После подключения можно показать адрес и подсказку “вернитесь в Telegram”
+  tonconnectUI.onStatusChange((walletInfo) => {
+    if (walletInfo?.account?.address) {
+      document.getElementById('status').textContent =
+        `✅ Подключено: ${walletInfo.account.address.slice(0,4)}…${walletInfo.account.address.slice(-4)}`;
+    }
+  });
+</script>
+<body style="font-family: system-ui; margin: 24px;">
+  <h1>Подключение кошелька</h1>
+  <p>Нажмите кнопку ниже, выберите Tonkeeper (или другой кошелёк) и подтвердите подключение.</p>
+  <div id="connect"></div>
+  <p id="status" style="margin-top:12px;color:#0a0;">Ожидаем подключение…</p>
+  <div id="app"></div>
+</body>
+</html>
